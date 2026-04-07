@@ -23,9 +23,7 @@ export default function ChatPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         router.push('/auth/login');
@@ -33,16 +31,12 @@ export default function ChatPage() {
       }
 
       setUser(user);
-      
-      // Load chat history (simulated for now)
-      const initialMessage: Message = {
+      setMessages([{
         id: '0',
         role: 'assistant',
-        content:
-          'Hallo! 👋 Ich bin dein Quitter-Buddy. Ich bin hier, um dich auf deinem Weg zu unterstützen. Was kann ich für dich tun?',
+        content: 'Hallo! 👋 Ich bin dein Quitter-Buddy — dein persönlicher KI-Coach. Ich bin hier um dir zu helfen, rauchfrei zu bleiben. Was kann ich für dich tun?',
         timestamp: new Date().toISOString(),
-      };
-      setMessages([initialMessage]);
+      }]);
       setLoading(false);
     };
 
@@ -61,7 +55,6 @@ export default function ChatPage() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -74,47 +67,36 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      // Call Claude API via Edge Function
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: input,
-          history: messages,
-        }),
+        body: JSON.stringify({ message: input, history: messages }),
       });
 
       const data = await response.json();
 
       if (data.error) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: `❌ Fehler: ${data.error}`,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        setMessages((prev) => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `❌ Fehler: ${data.error}`,
+          timestamp: new Date().toISOString(),
+        }]);
       } else {
-        const assistantMessage: Message = {
+        setMessages((prev) => [...prev, {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: data.reply,
           timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
+        }]);
       }
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: '❌ Verbindungsfehler. Bitte später versuchen.',
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+    } catch {
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: '❌ Verbindungsfehler. Bitte später versuchen.',
+        timestamp: new Date().toISOString(),
+      }]);
     } finally {
       setSending(false);
     }
@@ -122,88 +104,120 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="text-gray-400">Wird geladen...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <nav className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🤖</span>
-            <h1 className="text-2xl font-bold text-teal-400">Quitter-Buddy</h1>
-          </div>
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl shrink-0">
+        <div className="max-w-3xl mx-auto px-4 py-3.5 flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+            className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1.5"
           >
             ← Zurück
           </button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-lg shadow-lg shadow-teal-500/20">
+              🤖
+            </div>
+            <div>
+              <p className="font-bold text-white text-sm">Quitter-Buddy</p>
+              <p className="text-emerald-400 text-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                KI-Coach aktiv
+              </p>
+            </div>
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 h-[calc(100vh-200px)] flex flex-col">
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-md p-6 mb-6 space-y-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full">
+        <div className="space-y-4">
           {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={msg.id}
+              className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            >
+              {/* Avatar */}
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${
+                msg.role === 'assistant'
+                  ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-500/20'
+                  : 'bg-slate-700 border border-slate-600'
+              }`}>
+                {msg.role === 'assistant' ? '🤖' : '👤'}
+              </div>
+
+              {/* Bubble */}
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-teal-600 text-white rounded-br-none'
-                    : 'bg-gray-700 text-gray-100 rounded-bl-none'
+                    ? 'bg-teal-500 text-slate-950 font-medium rounded-tr-sm'
+                    : 'bg-slate-800/80 text-slate-100 border border-slate-700/60 rounded-tl-sm'
                 }`}
               >
-                <p className="text-sm">{msg.content}</p>
-                <div
-                  className={`text-xs mt-1 ${
-                    msg.role === 'user' ? 'text-teal-200' : 'text-gray-400'
-                  }`}
-                >
+                <p>{msg.content}</p>
+                <p className={`text-xs mt-1.5 opacity-60`}>
                   {new Date(msg.timestamp).toLocaleTimeString('de-DE', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
-                </div>
+                </p>
               </div>
             </div>
           ))}
+
+          {/* Typing indicator */}
           {sending && (
-            <div className="flex justify-start">
-              <div className="bg-gray-700 text-gray-200 px-4 py-3 rounded-lg rounded-bl-none">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-sm shrink-0">
+                🤖
+              </div>
+              <div className="bg-slate-800/80 border border-slate-700/60 px-4 py-3 rounded-2xl rounded-tl-sm">
+                <div className="flex gap-1 items-center">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s` }}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
+      </div>
 
-        {/* Input Form */}
-        <form onSubmit={handleSendMessage} className="flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Schreib deine Frage oder Gedanken..."
-            disabled={sending}
-            className="flex-1 px-4 py-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-500 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={sending || !input.trim()}
-            className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition font-medium disabled:opacity-50"
-          >
-            {sending ? '...' : 'Senden'}
-          </button>
-        </form>
-      </main>
+      {/* Input */}
+      <div className="border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-xl px-4 py-4 shrink-0">
+        <div className="max-w-3xl mx-auto">
+          <form onSubmit={handleSendMessage} className="flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Schreib eine Nachricht..."
+              disabled={sending}
+              className="flex-1 px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={sending || !input.trim()}
+              className="px-5 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-teal-500/20 text-sm"
+            >
+              {sending ? '...' : '↑'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

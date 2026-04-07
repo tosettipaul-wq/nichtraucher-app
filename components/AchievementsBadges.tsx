@@ -20,6 +20,13 @@ interface AchievementsBadgesProps {
   onNewAchievement?: (badge: Badge) => void;
 }
 
+const MILESTONE_GOALS = [
+  { emoji: '🥉', name: 'Bronze', days: 7 },
+  { emoji: '🥈', name: 'Silber', days: 30 },
+  { emoji: '🥇', name: 'Gold', days: 100 },
+  { emoji: '💎', name: 'Platin', days: 365 },
+];
+
 export default function AchievementsBadges({
   userId,
   totalBadges = 0,
@@ -37,7 +44,6 @@ export default function AchievementsBadges({
   const loadAchievements = async () => {
     try {
       const supabase = createClient();
-      
       const { data, error } = await supabase
         .from('achievements')
         .select('id, achievement_type, achievement_name, description, icon_emoji, unlock_date')
@@ -46,37 +52,28 @@ export default function AchievementsBadges({
 
       if (error) throw error;
 
-      // Mark first achievement as new
       const badgesWithNewFlag = (data || []).map((badge: any, idx: number) => ({
         ...badge,
-        is_new: idx === 0,
+        is_new: idx === 0 && new Date(badge.unlock_date).getTime() > Date.now() - 24 * 60 * 60 * 1000,
       }));
 
       setBadges(badgesWithNewFlag);
 
-      // Trigger confetti if we got a new badge
-      if (badgesWithNewFlag.length > 0 && badgesWithNewFlag[0].is_new) {
-        setNewBadge(badgesWithNewFlag[0]);
+      const freshBadge = badgesWithNewFlag.find((b: Badge) => b.is_new);
+      if (freshBadge) {
+        setNewBadge(freshBadge);
         setShowConfetti(true);
-        onNewAchievement?.(badgesWithNewFlag[0]);
-        
-        // Auto-hide confetti after 3s
-        setTimeout(() => setShowConfetti(false), 3000);
+        setTimeout(() => setShowConfetti(false), 5000);
+        onNewAchievement?.(freshBadge);
       }
-    } catch (error) {
-      console.error('Error loading achievements:', error);
+    } catch (err) {
+      console.error('Error loading achievements:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-        <p className="text-gray-400">Badges werden geladen...</p>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
     <>
@@ -90,82 +87,71 @@ export default function AchievementsBadges({
         />
       )}
 
-      <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            🏆 Achievements ({badges.length})
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            🏆 Achievements
+            <span className="text-sm font-normal text-slate-400">({badges.length})</span>
           </h2>
           {newBadge && (
-            <div className="animate-bounce text-center">
-              <p className="text-teal-400 font-bold text-sm">✨ Neu!</p>
-              <p className="text-2xl">{newBadge.icon_emoji}</p>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/15 border border-teal-500/30">
+              <span className="text-lg">{newBadge.icon_emoji}</span>
+              <span className="text-teal-300 text-xs font-bold">Neu!</span>
             </div>
           )}
         </div>
 
         {badges.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-400 text-lg mb-2">Noch keine Badges freigeschaltet</p>
-            <p className="text-gray-500 text-sm">
-              Vermeide Verlangen und erreiche Meilensteine, um Badges zu erhalten!
-            </p>
+          <div className="text-center py-10">
+            <p className="text-4xl mb-3">🔒</p>
+            <p className="text-slate-400 text-sm mb-1">Noch keine Badges freigeschaltet</p>
+            <p className="text-slate-500 text-xs">Meistere Meilensteine, um Badges zu verdienen!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {badges.map((badge) => (
               <div
                 key={badge.id}
-                className={`relative bg-gray-700 hover:bg-gray-600 rounded-lg p-4 text-center transition transform hover:scale-105 cursor-pointer border-2 ${
-                  badge.is_new ? 'border-teal-400 shadow-lg shadow-teal-500/50' : 'border-gray-600'
+                className={`relative rounded-xl p-4 text-center transition-all hover:scale-105 cursor-pointer border ${
+                  badge.is_new
+                    ? 'border-teal-500/60 bg-teal-500/10 shadow-lg shadow-teal-500/10'
+                    : 'border-slate-700/60 bg-slate-800/60 hover:border-slate-600'
                 }`}
               >
-                {/* Glow effect for new badges */}
                 {badge.is_new && (
-                  <div className="absolute inset-0 bg-teal-400 opacity-10 rounded-lg animate-pulse" />
+                  <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-teal-500 flex items-center justify-center">
+                    <span className="text-slate-950 text-[8px] font-black">✓</span>
+                  </div>
                 )}
-
-                <div className="relative z-10">
-                  <p className="text-4xl mb-2">{badge.icon_emoji}</p>
-                  <p className="text-white font-bold text-sm line-clamp-2">
-                    {badge.achievement_name}
-                  </p>
-                  <p className="text-gray-400 text-xs mt-1 line-clamp-2">
-                    {badge.description}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-2">
-                    {new Date(badge.unlock_date).toLocaleDateString('de-DE')}
-                  </p>
-                </div>
+                <p className="text-3xl mb-2">{badge.icon_emoji}</p>
+                <p className="text-white font-bold text-xs line-clamp-2">{badge.achievement_name}</p>
+                <p className="text-slate-500 text-[10px] mt-1 line-clamp-2">{badge.description}</p>
+                <p className="text-slate-600 text-[10px] mt-1.5">
+                  {new Date(badge.unlock_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                </p>
               </div>
             ))}
           </div>
         )}
 
-        {/* Achievement goals */}
-        <div className="mt-8 pt-6 border-t border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">🎯 Nächste Ziele:</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { emoji: '🥉', name: 'Bronze Badge', days: 7 },
-              { emoji: '🥈', name: 'Silver Badge', days: 30 },
-              { emoji: '🥇', name: 'Gold Badge', days: 100 },
-              { emoji: '💎', name: 'Platinum Badge', days: 365 },
-            ].map((goal) => {
-              const achieved = badges.some((b) =>
-                b.achievement_name.includes(goal.name)
-              );
+        {/* Milestone goals */}
+        <div className="mt-6 pt-5 border-t border-slate-800/80">
+          <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">🎯 Meilensteine</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {MILESTONE_GOALS.map((goal) => {
+              const achieved = badges.some((b) => b.achievement_name.toLowerCase().includes(goal.name.toLowerCase()));
               return (
                 <div
                   key={goal.name}
-                  className={`p-3 rounded-lg ${
+                  className={`rounded-xl p-3 text-center border text-xs font-medium ${
                     achieved
-                      ? 'bg-teal-900 border border-teal-600'
-                      : 'bg-gray-700 border border-gray-600'
+                      ? 'border-teal-500/30 bg-teal-500/8 text-teal-300'
+                      : 'border-slate-700/60 bg-slate-800/40 text-slate-500'
                   }`}
                 >
-                  <p className="text-sm">
-                    {achieved ? '✅' : '🔒'} {goal.emoji} {goal.name} ({goal.days}d)
-                  </p>
+                  <span className="text-lg block mb-1">{goal.emoji}</span>
+                  {achieved ? '✅ ' : '🔒 '}{goal.name}
+                  <p className="text-[10px] mt-0.5 opacity-60">{goal.days} Tage</p>
                 </div>
               );
             })}

@@ -12,6 +12,13 @@ import StreakWidget from '@/components/StreakWidget';
 import AchievementsBadges from '@/components/AchievementsBadges';
 import { getLevelFromXP } from '@/lib/gamification-utils';
 
+const QUICK_ACTIONS = [
+  { icon: '🏆', label: 'Leaderboard', sub: 'Rangliste', href: '/leaderboard' },
+  { icon: '😤', label: 'Craving', sub: 'Verlangen loggen', href: '/craving' },
+  { icon: '🤖', label: 'KI-Coach', sub: 'Quitter-Buddy', href: '/chat' },
+  { icon: '👥', label: 'Freunde', sub: 'Accountability', href: '/friends' },
+];
+
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -28,15 +35,13 @@ export default function DashboardPage() {
     const loadData = async () => {
       const supabase = createClient();
 
-      // Request notification permission
       const permissionGranted = await requestNotificationPermission();
       if (permissionGranted) {
         setNotificationsEnabled(true);
-        scheduleDailyNotification('20:00'); // 8 PM daily
+        scheduleDailyNotification('20:00');
       }
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         router.push('/auth/login');
@@ -45,7 +50,6 @@ export default function DashboardPage() {
 
       setUser(user);
 
-      // Load user profile
       const { data: profileData, error } = await supabase
         .from('users')
         .select('*')
@@ -54,19 +58,13 @@ export default function DashboardPage() {
 
       if (!error && profileData) {
         setProfile(profileData);
-
-        // Calculate days sober
         const quitDate = new Date(profileData.quit_date);
         const today = new Date();
         const diff = today.getTime() - quitDate.getTime();
         const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
         setDaysSober(days);
-
-        // Calculate money saved (€0.40 per cigarette)
         const saved = Math.round((profileData.cigs_per_day_before || 0) * 0.4 * days);
         setMoneySaved(saved);
-
-        // Load gamification data
         setStreak(profileData.current_streak || days);
         setTotalBadges(profileData.total_badges || 0);
         const level = getLevelFromXP(profileData.xp_points || 0);
@@ -87,177 +85,146 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="text-gray-400">Wird geladen...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-teal-500 border-t-transparent animate-spin" />
+          <p className="text-slate-400 text-sm">Dashboard lädt...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <nav className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-teal-400">Nichtraucher</h1>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
-          >
-            Abmelden
-          </button>
+    <div className="min-h-screen bg-slate-950">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-base shadow-lg shadow-teal-500/20">
+              🚭
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tight">
+              Nichtraucher<span className="text-teal-400">.</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {profile?.full_name && (
+              <span className="text-slate-400 text-sm hidden sm:inline">Hey, {profile.full_name}!</span>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 text-sm font-medium text-slate-400 border border-slate-700 rounded-xl hover:border-slate-600 hover:text-slate-200 transition-all"
+            >
+              Abmelden
+            </button>
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Hero Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+        {/* Hero Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Days Sober */}
-          <div className="bg-gradient-to-br from-teal-900 to-teal-800 rounded-lg shadow-lg p-8 border-l-4 border-teal-400">
-            <div className="text-teal-300 text-sm uppercase tracking-wide font-semibold">
-              Tage rauchfrei
-            </div>
-            <div className="mt-2 text-5xl font-bold text-teal-400">{daysSober}</div>
+          <div className="rounded-2xl border border-teal-500/20 bg-gradient-to-br from-teal-500/10 to-teal-600/5 p-6 relative overflow-hidden">
+            <div className="absolute top-3 right-4 text-teal-500/20 text-5xl font-black">🚭</div>
+            <p className="text-teal-400 text-xs font-semibold uppercase tracking-widest mb-2">Tage rauchfrei</p>
+            <p className="text-5xl font-black text-white tabular-nums mb-1">{daysSober}</p>
             {profile?.quit_date && (
-              <p className="text-teal-200 text-sm mt-3">
-                Seit {new Date(profile.quit_date).toLocaleDateString('de-DE')}
+              <p className="text-teal-400/60 text-xs">
+                seit {new Date(profile.quit_date).toLocaleDateString('de-DE')}
               </p>
             )}
           </div>
 
           {/* Money Saved */}
-          <div className="bg-gradient-to-br from-emerald-900 to-emerald-800 rounded-lg shadow-lg p-8 border-l-4 border-emerald-400">
-            <div className="text-emerald-300 text-sm uppercase tracking-wide font-semibold">
-              Geld gespart
-            </div>
-            <div className="mt-2 text-5xl font-bold text-emerald-400">€{moneySaved}</div>
-            <p className="text-emerald-200 text-sm mt-3">
-              bei {profile?.cigs_per_day_before} Zigaretten/Tag
+          <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 p-6 relative overflow-hidden">
+            <div className="absolute top-3 right-4 text-emerald-500/20 text-5xl font-black">€</div>
+            <p className="text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-2">Geld gespart</p>
+            <p className="text-5xl font-black text-white tabular-nums mb-1">€{moneySaved}</p>
+            <p className="text-emerald-400/60 text-xs">
+              {profile?.cigs_per_day_before} Zig/Tag × €0,40
             </p>
           </div>
 
           {/* XP Level */}
-          <div className="bg-gradient-to-br from-purple-900 to-purple-800 rounded-lg shadow-lg p-8 border-l-4 border-purple-400">
-            <div className="text-purple-300 text-sm uppercase tracking-wide font-semibold">
-              ⭐ Level
-            </div>
-            <div className="mt-2 text-5xl font-bold text-purple-400">{xpLevel.level}</div>
-            <div className="mt-3 w-full bg-purple-950 rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-purple-400 rounded-full transition-all duration-500"
+          <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 to-violet-600/5 p-6 relative overflow-hidden">
+            <div className="absolute top-3 right-4 text-violet-500/20 text-5xl font-black">⭐</div>
+            <p className="text-violet-400 text-xs font-semibold uppercase tracking-widest mb-2">Level</p>
+            <p className="text-5xl font-black text-white tabular-nums mb-2">{xpLevel.level}</p>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-all duration-700"
                 style={{ width: `${xpLevel.progressPercent}%` }}
               />
             </div>
-            <p className="text-purple-200 text-xs mt-2">{profile?.xp_points || 0} XP</p>
+            <p className="text-violet-400/60 text-xs mt-1">{profile?.xp_points || 0} XP</p>
           </div>
         </div>
 
         {/* Streak Widget */}
         {profile?.quit_date && (
-          <div className="mb-8">
-            <StreakWidget quitDate={profile.quit_date} currentStreak={streak} />
-          </div>
+          <StreakWidget quitDate={profile.quit_date} currentStreak={streak} />
         )}
 
-        {/* Profile Section */}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {QUICK_ACTIONS.map(({ icon, label, sub, href }) => (
+            <button
+              key={href}
+              onClick={() => router.push(href)}
+              className="rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:border-teal-500/40 hover:bg-slate-900 p-5 text-left transition-all hover:shadow-lg hover:shadow-teal-500/5 hover:-translate-y-0.5 group"
+            >
+              <div className="text-2xl mb-3">{icon}</div>
+              <p className="font-bold text-white text-sm group-hover:text-teal-300 transition-colors">{label}</p>
+              <p className="text-slate-500 text-xs mt-0.5">{sub}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Notification toggle */}
+        <button
+          onClick={() => sendTestNotification()}
+          className={`w-full rounded-2xl border p-4 flex items-center gap-4 transition-all ${
+            notificationsEnabled
+              ? 'border-emerald-500/30 bg-emerald-500/8 hover:bg-emerald-500/12'
+              : 'border-slate-700/60 bg-slate-900/60 hover:border-slate-600'
+          }`}
+        >
+          <span className="text-2xl">{notificationsEnabled ? '🔔' : '🔕'}</span>
+          <div className="text-left">
+            <p className={`font-semibold text-sm ${notificationsEnabled ? 'text-emerald-300' : 'text-white'}`}>
+              {notificationsEnabled ? 'Tägliche Erinnerungen aktiv' : 'Benachrichtigungen aktivieren'}
+            </p>
+            <p className={`text-xs mt-0.5 ${notificationsEnabled ? 'text-emerald-400/60' : 'text-slate-500'}`}>
+              {notificationsEnabled ? '20:00 Uhr täglich — Klick für Test' : 'Jeden Abend um 20:00 Uhr'}
+            </p>
+          </div>
+        </button>
+
+        {/* Profile summary */}
         {profile && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-md p-8 mb-8">
-            <h2 className="text-2xl font-bold text-white mb-6">Dein Profil</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <span className="text-gray-400 font-medium">Name:</span>
-                <p className="text-gray-200 text-lg">{profile.full_name || '—'}</p>
-              </div>
-              <div>
-                <span className="text-gray-400 font-medium">Email:</span>
-                <p className="text-gray-200 text-lg">{user?.email}</p>
-              </div>
-              <div>
-                <span className="text-gray-400 font-medium">Grund:</span>
-                <p className="text-gray-200 text-lg">{profile.motivation || '—'}</p>
-              </div>
-              <div>
-                <span className="text-gray-400 font-medium">Status:</span>
-                <p className="text-gray-200 text-lg capitalize">
-                  {profile.status === 'planning' ? '📅 Vorbereitung' : profile.status}
-                </p>
-              </div>
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6">
+            <h2 className="text-lg font-bold text-white mb-4">👤 Profil</h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { label: 'Name', value: profile.full_name || '—' },
+                { label: 'E-Mail', value: user?.email },
+                { label: 'Motivation', value: profile.motivation || '—' },
+                { label: 'Status', value: profile.status === 'planning' ? '📅 Vorbereitung' : profile.status || '—' },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-xl bg-slate-800/60 p-3">
+                  <p className="text-slate-500 text-xs mb-1">{label}</p>
+                  <p className="text-slate-200 text-sm font-medium truncate">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Achievements Section */}
+        {/* Achievements */}
         {user && (
-          <div className="mb-8">
-            <AchievementsBadges userId={user.id} totalBadges={totalBadges} />
-          </div>
+          <AchievementsBadges userId={user.id} totalBadges={totalBadges} />
         )}
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-5 gap-6 mb-8">
-          <button
-            onClick={() => router.push('/leaderboard')}
-            className="bg-gray-800 hover:bg-gray-700 rounded-lg shadow-md p-6 text-left transition border border-gray-700"
-          >
-            <div className="text-2xl mb-2">🏆</div>
-            <h3 className="font-bold text-white">Leaderboard</h3>
-            <p className="text-gray-400 text-sm">Mit Freunden konkurrieren</p>
-          </button>
-
-          <button
-            onClick={() => router.push('/craving')}
-            className="bg-gray-800 hover:bg-gray-700 rounded-lg shadow-md p-6 text-left transition border border-gray-700"
-          >
-            <div className="text-2xl mb-2">📝</div>
-            <h3 className="font-bold text-white">Craving Eintrag</h3>
-            <p className="text-gray-400 text-sm">Dein aktuelles Verlangen</p>
-          </button>
-
-          <button
-            onClick={() => router.push('/chat')}
-            className="bg-gray-800 hover:bg-gray-700 rounded-lg shadow-md p-6 text-left transition border border-gray-700"
-          >
-            <div className="text-2xl mb-2">🤖</div>
-            <h3 className="font-bold text-white">Quitter-Buddy Chat</h3>
-            <p className="text-gray-400 text-sm">Sprich mit deinem Coach</p>
-          </button>
-
-          <button
-            onClick={() => router.push('/friends')}
-            className="bg-gray-800 hover:bg-gray-700 rounded-lg shadow-md p-6 text-left transition border border-gray-700"
-          >
-            <div className="text-2xl mb-2">👥</div>
-            <h3 className="font-bold text-white">Accountability</h3>
-            <p className="text-gray-400 text-sm">Freunde einladen</p>
-          </button>
-
-          <button
-            onClick={() => sendTestNotification()}
-            className={`rounded-lg shadow-md p-6 text-left transition border ${
-              notificationsEnabled
-                ? 'bg-emerald-900 hover:bg-emerald-800 border-emerald-700'
-                : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
-            }`}
-          >
-            <div className="text-2xl mb-2">{notificationsEnabled ? '🔔' : '🔕'}</div>
-            <h3 className={`font-bold ${notificationsEnabled ? 'text-emerald-300' : 'text-white'}`}>
-              {notificationsEnabled ? 'Benachrichtigungen An' : 'Benachrichtigungen Aus'}
-            </h3>
-            <p className={`text-sm ${notificationsEnabled ? 'text-emerald-200' : 'text-gray-400'}`}>
-              {notificationsEnabled ? 'Klick für Test' : 'Zum Aktivieren klicken'}
-            </p>
-          </button>
-        </div>
-
-        {/* Debug */}
-        <div className="mt-8 bg-gray-800 border border-gray-700 rounded-lg p-4">
-          <details>
-            <summary className="text-sm font-medium text-gray-300 cursor-pointer">
-              🔧 Debug Info
-            </summary>
-            <pre className="mt-2 text-xs text-gray-400 overflow-auto bg-gray-900 p-2 rounded">
-              {JSON.stringify({ user: user?.email, profile }, null, 2)}
-            </pre>
-          </details>
-        </div>
       </main>
     </div>
   );

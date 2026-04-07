@@ -16,67 +16,78 @@ export default function Step4Page() {
     router.push('/onboarding/step-5');
   };
 
+  const cigsPerDay = (data.cigs_per_day as number) || 0;
+  const monthly = cigsPerDay ? Math.round(cigsPerDay * 0.4 * 30) : 0;
+  const yearly = cigsPerDay ? Math.round(cigsPerDay * 0.4 * 365) : 0;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Progress */}
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <div key={s} className={`h-1 flex-1 rounded-full transition-all ${s <= 4 ? 'bg-teal-500' : 'bg-slate-700'}`} />
+        ))}
+      </div>
+
+      {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-white">Schritt 4 von 5</h1>
-        <p className="text-gray-300 text-lg mt-2">
-          Wie viele Zigaretten rauchst du derzeit pro Tag?
+        <p className="text-teal-400 text-sm font-semibold uppercase tracking-wide mb-2">Schritt 4 von 5</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">Wie viel rauchst du?</h1>
+        <p className="text-slate-400 mt-2">Für deine persönliche Ersparnis-Berechnung.</p>
+      </div>
+
+      {/* Input */}
+      <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-5 space-y-4">
+        <label className="block text-sm font-semibold text-slate-300">
+          🚬 Zigaretten pro Tag
+        </label>
+        <input
+          type="number"
+          value={data.cigs_per_day || ''}
+          onChange={(e) => setData('cigs_per_day', parseInt(e.target.value) || 0)}
+          min="1"
+          max="100"
+          placeholder="z.B. 15"
+          className="w-full px-4 py-4 text-2xl font-black rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center"
+        />
+        <p className="text-slate-500 text-xs text-center">Durchschnittliche Anzahl pro Tag</p>
+      </div>
+
+      {/* Savings preview */}
+      {cigsPerDay > 0 && (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 p-5">
+          <p className="text-emerald-400 font-bold text-sm mb-3">💰 Deine Ersparnis wenn rauchfrei:</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-emerald-500/10 p-3 text-center">
+              <p className="text-emerald-300 font-black text-xl">€{monthly}</p>
+              <p className="text-emerald-400/60 text-xs mt-1">Nach 30 Tagen</p>
+            </div>
+            <div className="rounded-lg bg-emerald-500/10 p-3 text-center">
+              <p className="text-emerald-300 font-black text-xl">€{yearly}</p>
+              <p className="text-emerald-400/60 text-xs mt-1">Nach 1 Jahr</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-teal-500/20 bg-teal-500/8 p-4">
+        <p className="text-sm text-teal-300/80 leading-relaxed">
+          💡 Diese Zahl hilft uns, deinen Fortschritt präzise zu berechnen.
         </p>
       </div>
 
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-4">
-            Durchschnittliche Zigaretten pro Tag
-          </label>
-          <input
-            type="number"
-            value={data.cigs_per_day || ''}
-            onChange={(e) => setData('cigs_per_day', parseInt(e.target.value) || 0)}
-            min="1"
-            max="100"
-            placeholder="z.B. 15"
-            className="w-full px-4 py-3 text-lg border border-gray-600 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-500"
-          />
-        </div>
-
-        {data.cigs_per_day && (
-          <div className="bg-amber-900 bg-opacity-30 border border-amber-700 rounded-lg p-4 space-y-2">
-            <p className="font-medium text-amber-300">💰 Kosteneinsparung:</p>
-            <div className="space-y-1 text-sm text-amber-200">
-              <p>
-                Nach 30 Tagen: ca.{' '}
-                <strong>€ {Math.round((data.cigs_per_day * 0.4 * 30) / 10) * 10}</strong>
-              </p>
-              <p>
-                Nach 1 Jahr: ca.{' '}
-                <strong>€ {Math.round((data.cigs_per_day * 0.4 * 365) / 100) * 100}</strong>
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="bg-teal-900 bg-opacity-30 border border-teal-700 rounded-lg p-4">
-          <p className="text-sm text-teal-200">
-            💡 Diese Zahl hilft uns, deine Fortschritte und Ersparnisse zu berechnen.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-3 pt-6">
+      {/* Actions */}
+      <div className="flex gap-3">
         <button
-          onClick={() => {
-            setStep(3);
-            router.push('/onboarding/step-3');
-          }}
-          className="px-6 py-2 text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 transition"
+          onClick={() => { setStep(3); router.push('/onboarding/step-3'); }}
+          className="px-5 py-3 text-slate-400 border border-slate-700 rounded-xl hover:border-slate-600 hover:text-slate-300 transition-all text-sm font-medium"
         >
           ← Zurück
         </button>
         <button
           onClick={handleNext}
-          className="flex-1 px-6 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition font-medium"
+          disabled={!data.cigs_per_day || data.cigs_per_day < 1}
+          className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition-all font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-teal-500/20"
         >
           Weiter →
         </button>

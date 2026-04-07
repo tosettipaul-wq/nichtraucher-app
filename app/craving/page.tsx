@@ -4,34 +4,27 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 
-interface CravingEntry {
-  trigger: string;
-  intensity: number;
-  notes: string;
-  handled_by: string;
-}
-
 const TRIGGERS = [
-  'Stress',
-  'Langeweile',
-  'Soziale Situation',
-  'Nach Essen',
-  'Mit Kaffee',
-  'Fahrt zur Arbeit',
-  'Arbeitspause',
-  'Feier/Event',
-  'Sonstiges',
+  { label: 'Stress', icon: '😤' },
+  { label: 'Langeweile', icon: '😑' },
+  { label: 'Soziale Situation', icon: '👥' },
+  { label: 'Nach Essen', icon: '🍽️' },
+  { label: 'Mit Kaffee', icon: '☕' },
+  { label: 'Fahrt zur Arbeit', icon: '🚗' },
+  { label: 'Arbeitspause', icon: '⏸️' },
+  { label: 'Feier/Event', icon: '🎉' },
+  { label: 'Sonstiges', icon: '🔮' },
 ];
 
 const COPING_STRATEGIES = [
-  'Spaziergang',
-  'Wasser trinken',
-  'Kaugummi',
-  'Tief atmen',
-  'Mit jemandem reden',
-  'Sport',
-  'Duschen',
-  'Etwas essen',
+  { label: 'Spaziergang', icon: '🚶' },
+  { label: 'Wasser trinken', icon: '💧' },
+  { label: 'Kaugummi', icon: '🔵' },
+  { label: 'Tief atmen', icon: '🫁' },
+  { label: 'Mit jemandem reden', icon: '💬' },
+  { label: 'Sport', icon: '🏋️' },
+  { label: 'Duschen', icon: '🚿' },
+  { label: 'Etwas essen', icon: '🍎' },
 ];
 
 export default function CravingPage() {
@@ -52,19 +45,14 @@ export default function CravingPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/auth/login');
         return;
       }
-
       setUser(user);
       setLoading(false);
     };
-
     checkAuth();
   }, [router]);
 
@@ -82,8 +70,6 @@ export default function CravingPage() {
 
     try {
       const supabase = createClient();
-
-      // Get user_id from database
       const { data: userData } = await supabase
         .from('users')
         .select('id')
@@ -96,19 +82,17 @@ export default function CravingPage() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('craving_events').insert([
-        {
-          user_id: userData.id,
-          type: 'regular',
-          trigger: [trigger],
-          intensity,
-          duration_minutes: 5,
-          emotion: notes ? [notes] : [],
-          response: handled_by || null,
-          response_text: succeeded === true ? 'success' : succeeded === false ? 'failed' : null,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      const { error: insertError } = await supabase.from('craving_events').insert([{
+        user_id: userData.id,
+        type: 'regular',
+        trigger: [trigger],
+        intensity,
+        duration_minutes: 5,
+        emotion: notes ? [notes] : [],
+        response: handled_by || null,
+        response_text: succeeded === true ? 'success' : succeeded === false ? 'failed' : null,
+        timestamp: new Date().toISOString(),
+      }]);
 
       if (insertError) {
         setError(insertError.message);
@@ -119,11 +103,7 @@ export default function CravingPage() {
         setNotes('');
         setHandledBy('');
         setSucceeded(null);
-
-        // Auto-redirect after 2s
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        setTimeout(() => router.push('/dashboard'), 1800);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
@@ -132,152 +112,161 @@ export default function CravingPage() {
     }
   };
 
+  const intensityColor = intensity <= 3 ? 'text-emerald-400' : intensity <= 6 ? 'text-amber-400' : 'text-red-400';
+  const intensityLabel = intensity <= 3 ? 'Leicht' : intensity <= 6 ? 'Mittel' : 'Stark';
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="text-gray-400">Wird geladen...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Verlangen Logger</h1>
-            <p className="text-gray-400 text-sm mt-2">Dokumentiere dein Verlangen und wie du damit umgegangen bist</p>
-          </div>
+    <div className="min-h-screen bg-slate-950">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+        <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center gap-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
+            className="text-slate-400 hover:text-white transition-colors text-sm"
           >
             ← Zurück
           </button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/20 text-base">
+              😤
+            </div>
+            <div>
+              <p className="font-bold text-white text-sm">Verlangen Logger</p>
+              <p className="text-slate-500 text-xs">Dokumentiere deinen Moment</p>
+            </div>
+          </div>
         </div>
+      </nav>
 
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {success && (
-          <div className="bg-emerald-900 border border-emerald-700 rounded-lg p-4 mb-6">
-            <p className="text-emerald-100 font-medium">✅ Eintrag gespeichert!</p>
-            <p className="text-emerald-200 text-sm mt-1">Wird zum Dashboard zurückgeleitet...</p>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center">
+            <p className="text-3xl mb-2">✅</p>
+            <p className="text-emerald-300 font-bold">Eintrag gespeichert! Weiter zur Übersicht...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900 border border-red-700 rounded-lg p-4 mb-6">
-            <p className="text-red-100 font-medium">❌ Fehler</p>
-            <p className="text-red-200 text-sm mt-1">{error}</p>
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
+            <p className="text-red-300 text-sm">❌ {error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-gray-800 border border-gray-700 rounded-lg p-8 space-y-6">
-          {/* Trigger Selection */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-3">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Trigger */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+            <label className="block text-sm font-semibold text-white">
               Was hat das Verlangen ausgelöst?
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {TRIGGERS.map((t) => (
+            <div className="grid grid-cols-3 gap-2">
+              {TRIGGERS.map(({ label, icon }) => (
                 <button
-                  key={t}
+                  key={label}
                   type="button"
-                  onClick={() => setTrigger(t)}
-                  className={`p-3 rounded-lg border transition text-sm font-medium ${
-                    trigger === t
-                      ? 'bg-teal-600 border-teal-500 text-white'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-teal-500 hover:bg-gray-600'
+                  onClick={() => setTrigger(trigger === label ? '' : label)}
+                  className={`p-3 rounded-xl border text-xs font-semibold transition-all ${
+                    trigger === label
+                      ? 'border-orange-500/60 bg-orange-500/15 text-orange-300'
+                      : 'border-slate-700/60 bg-slate-800/60 text-slate-300 hover:border-slate-600'
                   }`}
                 >
-                  {t}
+                  <div className="text-lg mb-1">{icon}</div>
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Intensity Slider */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-3">
-              Intensität des Verlangens: <span className="text-teal-400">{intensity}/10</span>
-            </label>
+          {/* Intensity */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-white">Intensität des Verlangens</label>
+              <div className="flex items-center gap-2">
+                <span className={`font-black text-2xl tabular-nums ${intensityColor}`}>{intensity}</span>
+                <span className={`text-xs font-medium ${intensityColor}`}>{intensityLabel}</span>
+              </div>
+            </div>
             <input
               type="range"
               min="1"
               max="10"
               value={intensity}
               onChange={(e) => setIntensity(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
+              className="w-full h-2 bg-slate-700 rounded-full appearance-none cursor-pointer accent-teal-500"
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-2">
-              <span>Leicht</span>
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Kaum spürbar</span>
               <span>Extremes Verlangen</span>
             </div>
           </div>
 
           {/* Notes */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-3">
-              Notizen (optional)
-            </label>
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-3">
+            <label className="block text-sm font-semibold text-white">Notizen (optional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Beschreibe deine Gedanken und Gefühle..."
-              className="w-full px-4 py-3 border border-gray-600 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-500 resize-none"
-              rows={4}
+              placeholder="Wie fühlst du dich gerade? Was geht dir durch den Kopf?"
+              className="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm"
+              rows={3}
             />
           </div>
 
-          {/* Coping Strategy */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-3">
-              Wie bin du damit umgegangen? (optional)
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {COPING_STRATEGIES.map((s) => (
+          {/* Coping strategy */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+            <label className="block text-sm font-semibold text-white">Wie bist du damit umgegangen?</label>
+            <div className="grid grid-cols-4 gap-2">
+              {COPING_STRATEGIES.map(({ label, icon }) => (
                 <button
-                  key={s}
+                  key={label}
                   type="button"
-                  onClick={() => setHandledBy(handled_by === s ? '' : s)}
-                  className={`p-2 rounded-lg border transition text-sm font-medium ${
-                    handled_by === s
-                      ? 'bg-emerald-600 border-emerald-500 text-white'
-                      : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-emerald-500 hover:bg-gray-600'
+                  onClick={() => setHandledBy(handled_by === label ? '' : label)}
+                  className={`p-2.5 rounded-xl border text-xs font-semibold transition-all text-center ${
+                    handled_by === label
+                      ? 'border-teal-500/60 bg-teal-500/15 text-teal-300'
+                      : 'border-slate-700/60 bg-slate-800/60 text-slate-400 hover:border-slate-600'
                   }`}
                 >
-                  {s}
+                  <div className="text-base mb-1">{icon}</div>
+                  <div className="text-[11px] leading-tight">{label}</div>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Outcome */}
-          <div>
-            <label className="block text-sm font-semibold text-white mb-3">
-              Verlangen überstanden?
-            </label>
-            <div className="flex gap-4">
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-3">
+            <label className="block text-sm font-semibold text-white">Verlangen überstanden?</label>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setSucceeded(true)}
-                className={`flex-1 p-3 rounded-lg border transition font-medium ${
+                onClick={() => setSucceeded(succeeded === true ? null : true)}
+                className={`py-4 rounded-xl border-2 font-bold text-sm transition-all ${
                   succeeded === true
-                    ? 'bg-emerald-600 border-emerald-500 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-emerald-500 hover:bg-gray-600'
+                    ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-300'
+                    : 'border-slate-700/60 bg-slate-800/60 text-slate-400 hover:border-slate-600'
                 }`}
               >
-                ✅ Ja, ich habe nicht geraucht!
+                ✅ Ja, stark geblieben!
               </button>
               <button
                 type="button"
-                onClick={() => setSucceeded(false)}
-                className={`flex-1 p-3 rounded-lg border transition font-medium ${
+                onClick={() => setSucceeded(succeeded === false ? null : false)}
+                className={`py-4 rounded-xl border-2 font-bold text-sm transition-all ${
                   succeeded === false
-                    ? 'bg-red-600 border-red-500 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-red-500 hover:bg-gray-600'
+                    ? 'border-red-500/60 bg-red-500/15 text-red-300'
+                    : 'border-slate-700/60 bg-slate-800/60 text-slate-400 hover:border-slate-600'
                 }`}
               >
-                ❌ Nein, ich bin schwach geworden
+                ❌ Bin schwach geworden
               </button>
             </div>
           </div>
@@ -286,12 +275,12 @@ export default function CravingPage() {
           <button
             type="submit"
             disabled={submitting || !trigger}
-            className="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 mt-8"
+            className="w-full py-4 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-2xl font-black text-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-teal-500/20"
           >
             {submitting ? 'Wird gespeichert...' : '💾 Eintrag speichern'}
           </button>
         </form>
-      </div>
+      </main>
     </div>
   );
 }

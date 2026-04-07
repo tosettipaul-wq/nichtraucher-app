@@ -22,11 +22,7 @@ export default function Step5Page() {
 
     try {
       const supabase = createClient();
-
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         setError('Nicht angemeldet');
@@ -34,7 +30,6 @@ export default function Step5Page() {
         return;
       }
 
-      // Update user profile in Supabase
       const { error: updateError } = await supabase
         .from('users')
         .update({
@@ -53,7 +48,6 @@ export default function Step5Page() {
         return;
       }
 
-      // Reset onboarding state and redirect
       reset();
       router.push('/dashboard');
     } catch (err) {
@@ -63,81 +57,83 @@ export default function Step5Page() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Progress */}
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <div key={s} className="h-1 flex-1 rounded-full bg-teal-500" />
+        ))}
+      </div>
+
+      {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-white">Schritt 5 von 5</h1>
-        <p className="text-gray-300 text-lg mt-2">Lass dich kennen!</p>
+        <p className="text-teal-400 text-sm font-semibold uppercase tracking-wide mb-2">Schritt 5 von 5 — Fast geschafft!</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">Wie heißt du?</h1>
+        <p className="text-slate-400 mt-2">Dein persönliches Profil wird eingerichtet.</p>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Dein Name
-          </label>
-          <input
-            type="text"
-            value={data.full_name || ''}
-            onChange={(e) => setData('full_name', e.target.value)}
-            placeholder="z.B. Paul"
-            className="w-full px-4 py-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-500"
-            disabled={loading}
-          />
-        </div>
+      {/* Name input */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-300 mb-2">
+          👤 Dein Vorname
+        </label>
+        <input
+          type="text"
+          value={data.full_name || ''}
+          onChange={(e) => setData('full_name', e.target.value)}
+          placeholder="z.B. Paul"
+          className="w-full px-4 py-4 text-xl font-semibold rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center"
+          disabled={loading}
+        />
+      </div>
 
-        {/* Summary */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 space-y-3">
-          <h3 className="font-bold text-white">Deine Quitter-Zusammenfassung:</h3>
-          <div className="space-y-2 text-sm">
-            <p>
-              <span className="text-gray-400">Grund:</span>
-              <span className="font-medium text-gray-200 ml-2">{data.reason}</span>
-            </p>
-            <p>
-              <span className="text-gray-400">Quit-Datum:</span>
-              <span className="font-medium text-gray-200 ml-2">{data.quit_date}</span>
-            </p>
-            <p>
-              <span className="text-gray-400">Zigaretten/Tag:</span>
-              <span className="font-medium text-gray-200 ml-2">{data.cigs_per_day}</span>
-            </p>
-            <p>
-              <span className="text-gray-400">Auslöser:</span>
-              <span className="font-medium text-gray-200 ml-2">
-                {(data.triggers || []).join(', ')}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-red-900 bg-opacity-40 border border-red-700 rounded-lg p-3">
-            <p className="text-red-200 text-sm">❌ {error}</p>
-          </div>
-        )}
-
-        <div className="bg-emerald-900 bg-opacity-40 border border-emerald-700 rounded-lg p-4">
-          <p className="text-emerald-300 font-medium">🚀 Du bist bereit!</p>
-          <p className="text-emerald-200 text-sm mt-1">
-            Deine Daten werden jetzt gespeichert und du bekommst Zugang zu deinem persönlichen
-            Quitter-Dashboard.
-          </p>
+      {/* Summary card */}
+      <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-5 space-y-3">
+        <h3 className="font-bold text-white text-sm uppercase tracking-wide">📋 Deine Zusammenfassung</h3>
+        <div className="space-y-2.5">
+          {[
+            { label: 'Motivation', value: data.reason },
+            { label: 'Quit-Datum', value: data.quit_date ? new Date(data.quit_date + 'T12:00:00').toLocaleDateString('de-DE') : '—' },
+            { label: 'Zigaretten/Tag', value: data.cigs_per_day ? `${data.cigs_per_day} Stück` : '—' },
+            { label: 'Auslöser', value: (data.triggers || []).slice(0, 3).join(', ') || '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between items-start gap-4 py-2 border-b border-slate-800/80 last:border-0">
+              <span className="text-slate-500 text-sm">{label}</span>
+              <span className="text-slate-200 text-sm font-medium text-right max-w-[55%]">{value}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="flex gap-3 pt-6">
+      {/* Ready CTA */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 p-5">
+        <p className="text-emerald-300 font-bold mb-1">🚀 Du bist bereit!</p>
+        <p className="text-emerald-400/70 text-sm leading-relaxed">
+          Dein persönliches Dashboard mit KI-Coach, Streak-Tracker und Gamification wartet auf dich.
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+          <p className="text-red-300 text-sm">❌ {error}</p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3">
         <button
           onClick={() => router.push('/onboarding/step-4')}
-          className="px-6 py-2 text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 transition"
+          className="px-5 py-3 text-slate-400 border border-slate-700 rounded-xl hover:border-slate-600 hover:text-slate-300 transition-all text-sm font-medium"
           disabled={loading}
         >
           ← Zurück
         </button>
         <button
           onClick={handleFinish}
-          disabled={loading}
-          className="flex-1 px-6 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition font-medium disabled:opacity-50"
+          disabled={loading || !data.full_name}
+          className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition-all font-black disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-xl hover:shadow-teal-500/25 text-lg"
         >
-          {loading ? 'Wird gespeichert...' : '🎯 Starten!'}
+          {loading ? 'Wird gespeichert...' : '🎯 Rauchfrei starten!'}
         </button>
       </div>
     </div>

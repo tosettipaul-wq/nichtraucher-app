@@ -3,17 +3,17 @@
 import { useRouter } from 'next/navigation';
 import { useOnboarding } from '@/lib/onboarding-store';
 
+const REASONS = [
+  { label: 'Gesundheit für mich selbst', icon: '💪' },
+  { label: 'Für meine Familie', icon: '❤️' },
+  { label: 'Finanzielle Gründe', icon: '💰' },
+  { label: 'Fitness & Sport', icon: '🏃' },
+  { label: 'Andere', icon: '✨' },
+];
+
 export default function Step1Page() {
   const router = useRouter();
   const { data, setData, setStep } = useOnboarding();
-
-  const reasons = [
-    'Gesundheit für mich selbst',
-    'Für meine Familie',
-    'Finanzielle Gründe',
-    'Fitness & Sport',
-    'Andere',
-  ];
 
   const handleNext = () => {
     if (!data.reason) {
@@ -25,47 +25,65 @@ export default function Step1Page() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-bold text-white">Schritt 1 von 5</h1>
-        <p className="text-gray-300 text-lg mt-2">Warum willst du mit dem Rauchen aufhören?</p>
+    <div className="space-y-8">
+      {/* Progress */}
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <div
+            key={s}
+            className={`h-1 flex-1 rounded-full transition-all ${s <= 1 ? 'bg-teal-500' : 'bg-slate-700'}`}
+          />
+        ))}
       </div>
 
+      {/* Header */}
+      <div>
+        <p className="text-teal-400 text-sm font-semibold uppercase tracking-wide mb-2">Schritt 1 von 5</p>
+        <h1 className="text-3xl font-black text-white tracking-tight">Warum aufhören?</h1>
+        <p className="text-slate-400 mt-2">Dein persönlicher Grund ist dein stärkster Motivator.</p>
+      </div>
+
+      {/* Options */}
       <div className="space-y-3">
-        {reasons.map((reason) => (
+        {REASONS.map(({ label, icon }) => (
           <button
-            key={reason}
-            onClick={() => setData('reason', reason)}
-            className={`w-full p-4 text-left rounded-lg border-2 transition ${
-              data.reason === reason
-                ? 'border-teal-500 bg-teal-900 bg-opacity-30'
-                : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+            key={label}
+            onClick={() => setData('reason', label)}
+            className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
+              data.reason === label
+                ? 'border-teal-500 bg-teal-500/10 shadow-lg shadow-teal-500/10'
+                : 'border-slate-700/60 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-800/60'
             }`}
           >
-            <div className="flex items-center">
-              <div
-                className={`w-5 h-5 rounded-full border-2 mr-3 ${
-                  data.reason === reason
-                    ? 'border-teal-500 bg-teal-500'
-                    : 'border-gray-600'
-                }`}
-              />
-              <span className={`font-medium ${data.reason === reason ? 'text-teal-400' : 'text-white'}`}>{reason}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xl w-8 text-center">{icon}</span>
+              <span className={`font-semibold ${data.reason === label ? 'text-teal-300' : 'text-white'}`}>
+                {label}
+              </span>
+              {data.reason === label && (
+                <div className="ml-auto w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
             </div>
           </button>
         ))}
       </div>
 
-      <div className="flex gap-3 pt-6">
+      {/* Actions */}
+      <div className="flex gap-3 pt-2">
         <button
-          onClick={() => router.push('/dashboard')}
-          className="px-6 py-2 text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 transition"
+          onClick={() => router.push('/')}
+          className="px-5 py-3 text-slate-400 border border-slate-700 rounded-xl hover:border-slate-600 hover:text-slate-300 transition-all text-sm font-medium"
         >
           Abbrechen
         </button>
         <button
           onClick={handleNext}
-          className="flex-1 px-6 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition font-medium"
+          disabled={!data.reason}
+          className="flex-1 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition-all font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-teal-500/20"
         >
           Weiter →
         </button>

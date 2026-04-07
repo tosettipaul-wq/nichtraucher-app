@@ -29,9 +29,7 @@ export default function FriendsPage() {
   useEffect(() => {
     const loadData = async () => {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
         router.push('/auth/login');
@@ -40,7 +38,6 @@ export default function FriendsPage() {
 
       setUser(user);
 
-      // Get user profile
       const { data: profile } = await supabase
         .from('users')
         .select('id')
@@ -48,7 +45,6 @@ export default function FriendsPage() {
         .single();
 
       if (profile) {
-        // Load accountability partners
         const { data: partnersData } = await supabase
           .from('accountability_partners')
           .select('*')
@@ -58,7 +54,6 @@ export default function FriendsPage() {
         setPartners(partnersData || []);
       }
 
-      // Generate share link
       const baseUrl = window.location.origin;
       const inviteCode = btoa(`${user.id}:${user.email}`).substring(0, 12);
       setShareLink(`${baseUrl}/friends/join/${inviteCode}`);
@@ -75,13 +70,7 @@ export default function FriendsPage() {
     setError(null);
     setSuccess(null);
 
-    if (!inviteEmail) {
-      setError('Bitte gib eine E-Mail-Adresse ein');
-      setSubmitting(false);
-      return;
-    }
-
-    if (!inviteEmail.includes('@')) {
+    if (!inviteEmail?.includes('@')) {
       setError('Ungültige E-Mail-Adresse');
       setSubmitting(false);
       return;
@@ -89,70 +78,25 @@ export default function FriendsPage() {
 
     try {
       const supabase = createClient();
+      const { data: profile } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+      if (!profile) { setError('Profil nicht gefunden'); setSubmitting(false); return; }
 
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
+      const { data: invitedUser } = await supabase.from('users').select('id').eq('email', inviteEmail).single();
+      if (!invitedUser) { setError('Benutzer nicht gefunden'); setSubmitting(false); return; }
 
-      if (!profile) {
-        setError('Benutzerprofil nicht gefunden');
-        setSubmitting(false);
-        return;
-      }
-
-      // Try to find user by email
-      const { data: invitedUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', inviteEmail)
-        .single();
-
-      if (!invitedUser) {
-        setError('Benutzer mit dieser E-Mail nicht gefunden');
-        setSubmitting(false);
-        return;
-      }
-
-      // Check if already connected
-      const { data: existing } = await supabase
-        .from('accountability_partners')
-        .select('*')
-        .eq('user_id', profile.id)
-        .eq('friend_id', invitedUser.id)
-        .single();
-
-      if (existing) {
-        setError('Diese Person ist bereits hinzugefügt');
-        setSubmitting(false);
-        return;
-      }
-
-      // Add new accountability partner
-      const { error: insertError } = await supabase.from('accountability_partners').insert([
-        {
-          user_id: profile.id,
-          friend_id: invitedUser.id,
-          relationship_type: 'supporter',
-          status: 'pending',
-        },
-      ]);
+      const { error: insertError } = await supabase.from('accountability_partners').insert([{
+        user_id: profile.id,
+        friend_id: invitedUser.id,
+        relationship_type: 'supporter',
+        status: 'pending',
+      }]);
 
       if (insertError) {
         setError(insertError.message);
       } else {
         setSuccess(`Einladung an ${inviteEmail} gesendet!`);
         setInviteEmail('');
-
-        // Reload partners
-        const { data: freshPartners } = await supabase
-          .from('accountability_partners')
-          .select('*')
-          .eq('user_id', profile.id)
-          .order('invited_at', { ascending: false });
-
+        const { data: freshPartners } = await supabase.from('accountability_partners').select('*').eq('user_id', profile.id).order('invited_at', { ascending: false });
         setPartners(freshPartners || []);
       }
     } catch (err) {
@@ -170,135 +114,123 @@ export default function FriendsPage() {
 
   const handleRemoveFriend = async (friendId: string) => {
     if (!confirm('Willst du diese Person wirklich entfernen?')) return;
-
     try {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('accountability_partners')
-        .delete()
-        .eq('id', friendId);
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setPartners(partners.filter((f) => f.id !== friendId));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
-    }
+      const { error } = await supabase.from('accountability_partners').delete().eq('id', friendId);
+      if (!error) setPartners(partners.filter((f) => f.id !== friendId));
+    } catch {}
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="text-gray-400">Wird geladen...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="w-8 h-8 rounded-full border-2 border-teal-500 border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Accountability Partner</h1>
-            <p className="text-gray-400 text-sm mt-2">Laden Freunde ein, dir zu helfen deine Ziele zu erreichen</p>
+    <div className="min-h-screen bg-slate-950">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+        <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center gap-4">
+          <button onClick={() => router.push('/dashboard')} className="text-slate-400 hover:text-white transition-colors text-sm">← Zurück</button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-base shadow-lg shadow-blue-500/20">👥</div>
+            <div>
+              <p className="font-bold text-white text-sm">Accountability Partner</p>
+              <p className="text-slate-500 text-xs">Gemeinsam stark bleiben</p>
+            </div>
           </div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition"
-          >
-            ← Zurück
-          </button>
         </div>
+      </nav>
 
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-5">
         {error && (
-          <div className="bg-red-900 border border-red-700 rounded-lg p-4 mb-6">
-            <p className="text-red-100 font-medium">❌ Fehler</p>
-            <p className="text-red-200 text-sm mt-1">{error}</p>
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
+            <p className="text-red-300 text-sm">❌ {error}</p>
           </div>
         )}
-
         {success && (
-          <div className="bg-emerald-900 border border-emerald-700 rounded-lg p-4 mb-6">
-            <p className="text-emerald-100 font-medium">✅ {success}</p>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+            <p className="text-emerald-300 text-sm font-medium">✅ {success}</p>
           </div>
         )}
 
         {/* Share Link */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">🔗 Dein Einladungs-Link</h2>
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-3">
+          <h2 className="font-bold text-white">🔗 Dein Einladungs-Link</h2>
           <div className="flex gap-2">
             <input
               type="text"
               value={shareLink}
               readOnly
-              className="flex-1 px-4 py-2 border border-gray-600 bg-gray-700 text-gray-300 rounded-lg text-sm"
+              className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 text-xs font-mono"
             />
             <button
               onClick={handleCopyLink}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
                 copied
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-teal-600 hover:bg-teal-500 text-white'
+                  ? 'bg-emerald-500 text-slate-950'
+                  : 'bg-teal-500 hover:bg-teal-400 text-slate-950'
               }`}
             >
-              {copied ? '✅ Kopiert!' : '📋 Kopieren'}
+              {copied ? '✓ Kopiert' : 'Kopieren'}
             </button>
           </div>
-          <p className="text-gray-400 text-xs mt-2">Teile diesen Link mit deinen Freunden</p>
+          <p className="text-slate-500 text-xs">Teile diesen Link mit Freunden</p>
         </div>
 
-        {/* Invite Form */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">➕ E-Mail einladen</h2>
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="freund@example.com"
-                className="flex-1 px-4 py-2 border border-gray-600 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-500"
-              />
-              <button
-                type="submit"
-                disabled={submitting || !inviteEmail}
-                className="px-6 py-2 bg-teal-600 hover:bg-teal-500 text-white font-medium rounded-lg transition disabled:opacity-50"
-              >
-                {submitting ? 'Wird gesendet...' : 'Einladen'}
-              </button>
-            </div>
+        {/* Invite form */}
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+          <h2 className="font-bold text-white">➕ Per E-Mail einladen</h2>
+          <form onSubmit={handleInvite} className="flex gap-2">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="freund@example.com"
+              className="flex-1 px-4 py-3 rounded-xl border border-slate-700 bg-slate-800 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !inviteEmail}
+              className="px-5 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-bold text-sm transition-all disabled:opacity-40"
+            >
+              {submitting ? '...' : 'Einladen'}
+            </button>
           </form>
         </div>
 
-        {/* Friends List */}
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-white mb-4">
-            👥 Deine Partner ({partners.length})
-          </h2>
-
+        {/* Partners list */}
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 space-y-4">
+          <h2 className="font-bold text-white">👥 Deine Partner ({partners.length})</h2>
           {partners.length === 0 ? (
-            <p className="text-gray-400 text-center py-8">
-              Noch keine Partner hinzugefügt. Lade Freunde ein oder teile deinen Link!
-            </p>
+            <div className="text-center py-8">
+              <p className="text-3xl mb-3">🤝</p>
+              <p className="text-slate-400 text-sm">Noch keine Partner. Lade jetzt Freunde ein!</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {partners.map((partner) => (
                 <div
                   key={partner.id}
-                  className="bg-gray-700 rounded-lg p-4 flex items-center justify-between"
+                  className="rounded-xl border border-slate-700/60 bg-slate-800/60 p-4 flex items-center justify-between"
                 >
-                  <div className="flex-1">
-                    <p className="font-medium text-white">Friend ID: {partner.friend_id}</p>
-                    <p className="text-sm text-gray-400">
-                      {partner.status === 'pending' ? '⏳ Ausstehend' : '✅ Angenommen'}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-700 flex items-center justify-center text-lg">
+                      {partner.status === 'accepted' ? '✅' : '⏳'}
+                    </div>
+                    <div>
+                      <p className="font-medium text-white text-sm">{partner.friend_id || 'Eingeladen'}</p>
+                      <p className={`text-xs ${partner.status === 'accepted' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {partner.status === 'pending' ? 'Ausstehend' : 'Angenommen'}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleRemoveFriend(partner.id)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg transition"
+                    className="px-3 py-1.5 text-xs text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-all"
                   >
                     Entfernen
                   </button>
@@ -307,7 +239,7 @@ export default function FriendsPage() {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
