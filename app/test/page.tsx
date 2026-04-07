@@ -1,261 +1,393 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function TestPage() {
   const [darkMode, setDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState('hero');
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'buddy', text: 'Hey! 👋 Wie geht es dir heute? Wie war deine Nacht?' },
-    { role: 'user', text: 'Gut, ich habe 7 Stunden geschlafen' },
-    { role: 'buddy', text: 'Awesome! 😴 Das ist großartig für deinen Körper. Dein Stress-Level wird dadurch sinken.' },
-  ]);
-  const [onboardingStep, setOnboardingStep] = useState(1);
   const [streakDays, setStreakDays] = useState(23);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'buddy', text: 'Hey! 👋 Wie geht es dir heute? Tag 23 – du bist ein Held!' },
+    { role: 'user', text: 'Hatte kurz ein Verlangen, aber es ist vorbei.' },
+    { role: 'buddy', text: '💪 Stark! Verlangen dauert maximal 3 Minuten. Du hast es überstanden!' },
+  ]);
 
-  const bgClass = darkMode ? 'bg-slate-950' : 'bg-white';
-  const textClass = darkMode ? 'text-white' : 'text-slate-950';
-  const cardClass = darkMode ? 'bg-slate-900 border-slate-700' : 'bg-gray-50 border-gray-200';
-  const inputClass = darkMode
-    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400'
-    : 'bg-white border-gray-300 text-slate-950 placeholder-gray-400';
+  const bg = darkMode ? 'bg-slate-950' : 'bg-gray-50';
+  const card = darkMode ? 'bg-slate-900/80 border-slate-700/60' : 'bg-white border-gray-200';
+  const text = darkMode ? 'text-white' : 'text-slate-900';
+  const muted = darkMode ? 'text-slate-400' : 'text-gray-500';
+  const subtle = darkMode ? 'bg-slate-800/60' : 'bg-gray-100';
 
-  const addChatMessage = (role: 'user' | 'buddy', text: string) => {
-    setChatMessages([...chatMessages, { role, text }]);
+  const stats = [
+    { label: 'Rauchfreie Tage', value: '23', icon: '🏆', color: 'text-teal-400' },
+    { label: 'Nicht geraucht', value: '460', sub: 'Zigaretten', icon: '🚭', color: 'text-green-400' },
+    { label: 'Erspart', value: '184€', icon: '💰', color: 'text-yellow-400' },
+    { label: 'Gewonnene Zeit', value: '38h', icon: '⏰', color: 'text-purple-400' },
+  ];
+
+  const features = [
+    {
+      icon: '🤖',
+      title: 'KI-Coach Buddy',
+      desc: 'Persönlicher Coach, der deinen Fortschritt kennt und bei Cravings sofort hilft.',
+      color: 'from-teal-500/20 to-cyan-500/20 border-teal-500/30',
+    },
+    {
+      icon: '📊',
+      title: 'Gesundheits-Timeline',
+      desc: 'Sieh in Echtzeit, wie sich dein Körper erholt – von Minuten bis zu Jahren.',
+      color: 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+    },
+    {
+      icon: '🎮',
+      title: 'Gamification',
+      desc: 'Verdiene Badges, erklimme die Bestenliste, und feiere jeden Meilenstein.',
+      color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30',
+    },
+    {
+      icon: '🔥',
+      title: 'Craving-Manager',
+      desc: 'Sofortige Techniken für den Moment, wenn das Verlangen kommt.',
+      color: 'from-orange-500/20 to-red-500/20 border-orange-500/30',
+    },
+    {
+      icon: '👥',
+      title: 'Community',
+      desc: 'Finde andere auf derselben Reise. Gegenseitige Unterstützung, die wirkt.',
+      color: 'from-blue-500/20 to-indigo-500/20 border-blue-500/30',
+    },
+    {
+      icon: '📱',
+      title: 'Offline-First',
+      desc: 'Funktioniert immer – auch ohne Internet. Deine Daten, dein Gerät.',
+      color: 'from-rose-500/20 to-pink-500/20 border-rose-500/30',
+    },
+  ];
+
+  const timeline = [
+    { time: '20 Min', desc: 'Herzfrequenz und Blutdruck normalisieren sich', done: true },
+    { time: '12 Std', desc: 'CO-Spiegel im Blut normalisiert sich', done: true },
+    { time: '2 Wo', desc: 'Blutkreislauf verbessert sich merklich', done: true },
+    { time: '1 Monat', desc: 'Lungenkapazität erhöht sich um 30%', done: false },
+    { time: '1 Jahr', desc: 'Herzinfarktrisiko halbiert sich', done: false },
+    { time: '10 Jahre', desc: 'Lungenkrebsrisiko wie ein Nichtraucher', done: false },
+  ];
+
+  const badges = [
+    { name: '1 Tag', icon: '⭐', earned: true },
+    { name: '1 Woche', icon: '🥉', earned: true },
+    { name: '2 Wochen', icon: '🥈', earned: true },
+    { name: '1 Monat', icon: '🥇', earned: false },
+    { name: '3 Monate', icon: '💎', earned: false },
+    { name: '1 Jahr', icon: '👑', earned: false },
+  ];
+
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+    const newMessages = [...chatMessages, { role: 'user', text: chatInput }];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setTimeout(() => {
+      setChatMessages([
+        ...newMessages,
+        { role: 'buddy', text: 'Ich bin für dich da! 💙 Du machst das großartig – bleib stark.' },
+      ]);
+    }, 800);
   };
 
+  const tabs = [
+    { id: 'hero', label: '🏠 Hero' },
+    { id: 'stats', label: '📊 Stats' },
+    { id: 'features', label: '✨ Features' },
+    { id: 'chat', label: '💬 KI-Coach' },
+    { id: 'timeline', label: '🕐 Timeline' },
+    { id: 'gamification', label: '🎮 Gamification' },
+  ];
+
   return (
-    <div className={`min-h-screen ${bgClass} ${textClass} transition-colors duration-300`}>
+    <div className={`min-h-screen ${bg} ${text} transition-all duration-300 font-sans`}>
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-700 bg-opacity-95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🚭 Nichtraucher Test Demo</h1>
+      <header
+        className={`sticky top-0 z-50 backdrop-blur-xl border-b ${
+          darkMode ? 'border-slate-800/80 bg-slate-950/90' : 'border-gray-200/80 bg-white/90'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-lg shadow-lg shadow-teal-500/25">
+              🚭
+            </div>
+            <div>
+              <span className="font-bold text-base tracking-tight">Nichtraucher</span>
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-400 font-medium border border-teal-500/25">
+                Test Demo
+              </span>
+            </div>
+          </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white transition"
+            className={`p-2 rounded-xl transition-all ${
+              darkMode
+                ? 'bg-slate-800 hover:bg-slate-700 text-yellow-400'
+                : 'bg-gray-100 hover:bg-gray-200 text-slate-700'
+            }`}
           >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
+            {darkMode ? '☀️' : '🌙'}
           </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-8 flex-wrap">
-          {['hero', 'onboarding', 'chat', 'gamification', 'walkthrough'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg font-semibold transition ${
-                activeTab === tab
-                  ? 'bg-teal-600 text-white'
-                  : darkMode
-                    ? 'bg-slate-800 hover:bg-slate-700'
-                    : 'bg-gray-200 hover:bg-gray-300'
+      {/* Tab Navigation */}
+      <div
+        className={`sticky top-[57px] z-40 border-b ${
+          darkMode ? 'border-slate-800/80 bg-slate-950/90' : 'border-gray-200/80 bg-white/90'
+        } backdrop-blur-xl`}
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 overflow-x-auto">
+          <div className="flex gap-1 py-2 min-w-max">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/25'
+                    : darkMode
+                    ? 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* HERO TAB */}
+        {activeTab === 'hero' && (
+          <div className="space-y-12">
+            {/* Hero Section */}
+            <div className="text-center space-y-6 py-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-400 text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                Live Demo – Keine Anmeldung erforderlich
+              </div>
+              <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+                Dein Leben.{' '}
+                <span className="bg-gradient-to-r from-teal-400 via-cyan-400 to-green-400 bg-clip-text text-transparent">
+                  Rauchfrei.
+                </span>
+              </h1>
+              <p className={`text-lg sm:text-xl ${muted} max-w-2xl mx-auto leading-relaxed`}>
+                Der KI-Coach, der dich durch jedes Verlangen führt. Kein Rückfall. Kein Kompromiss.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button className="px-8 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold text-lg shadow-xl shadow-teal-500/30 hover:shadow-teal-500/50 hover:scale-105 transition-all duration-200">
+                  Kostenlos starten 🚀
+                </button>
+                <button
+                  className={`px-8 py-4 rounded-2xl font-bold text-lg border transition-all duration-200 ${
+                    darkMode
+                      ? 'border-slate-700 hover:border-teal-500/50 hover:bg-teal-500/10'
+                      : 'border-gray-300 hover:border-teal-500/50 hover:bg-teal-50'
+                  }`}
+                >
+                  Demo ansehen
+                </button>
+              </div>
+            </div>
+
+            {/* Day Counter */}
+            <div
+              className={`rounded-3xl border p-8 text-center bg-gradient-to-br from-teal-500/10 via-cyan-500/5 to-transparent ${
+                darkMode ? 'border-teal-500/20' : 'border-teal-200'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Hero Section */}
-        {activeTab === 'hero' && (
-          <div className="space-y-8">
-            <div className={`rounded-xl p-8 border border-gray-700 ${cardClass}`}>
-              <div className="text-center mb-12">
-                <h2 className="text-5xl font-bold mb-4">🚭 Nichtraucher</h2>
-                <p className="text-xl text-gray-400">Dein Weg zur rauchfreien Zukunft</p>
+              <p className={`text-sm font-medium mb-2 ${muted}`}>Du bist bereits</p>
+              <div className="text-8xl font-black bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent leading-none mb-2">
+                {streakDays}
               </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className={`p-6 rounded-lg border ${cardClass}`}>
-                  <h3 className="text-2xl font-bold mb-4">Dein Fortschritt</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-400 mb-2">Tage rauchfrei</p>
-                      <p className="text-5xl font-bold text-teal-400">{streakDays}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400 mb-2">Geld gespart</p>
-                      <p className="text-3xl font-bold text-green-400">€{(streakDays * 8.5).toFixed(2)}</p>
-                    </div>
-                    <button
-                      onClick={() => setStreakDays(streakDays + 1)}
-                      className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg transition"
-                    >
-                      ✅ Heute rauchfrei (Demo)
-                    </button>
-                  </div>
-                </div>
-
-                <div className={`p-6 rounded-lg border ${cardClass}`}>
-                  <h3 className="text-2xl font-bold mb-4">Features</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <span className="text-teal-400 text-xl">✓</span>
-                      <span>Track Tage rauchfrei in Echtzeit</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-teal-400 text-xl">✓</span>
-                      <span>AI Buddy Chat (Doctor + Coach)</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-teal-400 text-xl">✓</span>
-                      <span>Gamification (Streaks, Badges)</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-teal-400 text-xl">✓</span>
-                      <span>Friend Accountability System</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <span className="text-teal-400 text-xl">✓</span>
-                      <span>Grace Days (Shame-free approach)</span>
-                    </li>
-                  </ul>
-                </div>
+              <p className="text-2xl font-bold mb-6">Tage rauchfrei 🎉</p>
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: Math.min(streakDays, 30) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2.5 h-8 rounded-full transition-all ${
+                      i < streakDays ? 'bg-teal-400' : darkMode ? 'bg-slate-700' : 'bg-gray-200'
+                    }`}
+                    style={{ opacity: i < streakDays ? 0.4 + (i / streakDays) * 0.6 : 1 }}
+                  />
+                ))}
               </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {stats.map((s) => (
+                <div
+                  key={s.label}
+                  className={`rounded-2xl border p-5 text-center transition-all hover:scale-105 ${card}`}
+                >
+                  <div className="text-3xl mb-2">{s.icon}</div>
+                  <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+                  {s.sub && <div className={`text-xs ${muted}`}>{s.sub}</div>}
+                  <div className={`text-xs mt-1 ${muted}`}>{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Onboarding Flow */}
-        {activeTab === 'onboarding' && (
-          <div className={`rounded-xl p-8 border border-gray-700 ${cardClass}`}>
-            <h2 className="text-3xl font-bold mb-6">Test Onboarding Flow (No Data Saved)</h2>
+        {/* STATS TAB */}
+        {activeTab === 'stats' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-black mb-2">Deine Fortschritte</h2>
+              <p className={muted}>Echtzeit-Tracking deiner rauchfreien Reise</p>
+            </div>
 
-            <div className="space-y-6">
-              {/* Progress Indicator */}
-              <div className="flex justify-between items-center mb-8">
-                {[1, 2, 3, 4].map((step) => (
-                  <div key={step} className="flex flex-col items-center flex-1">
-                    <button
-                      onClick={() => setOnboardingStep(step)}
-                      className={`w-12 h-12 rounded-full font-bold transition mb-2 ${
-                        step <= onboardingStep
-                          ? 'bg-teal-600 text-white'
-                          : darkMode
-                            ? 'bg-slate-700 text-gray-400'
-                            : 'bg-gray-300 text-gray-600'
-                      }`}
-                    >
-                      {step}
-                    </button>
-                    <span className="text-xs text-center text-gray-400">
-                      {step === 1
-                        ? 'Willkommen'
-                        : step === 2
-                          ? 'Ziel'
-                          : step === 3
-                            ? 'Motivation'
-                            : 'Fertig'}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Savings Card */}
+              <div
+                className={`rounded-2xl border p-6 bg-gradient-to-br from-yellow-500/10 to-orange-500/5 ${
+                  darkMode ? 'border-yellow-500/20' : 'border-yellow-200'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">💰</span>
+                  <div>
+                    <p className={`text-sm ${muted}`}>Gespart</p>
+                    <p className="text-4xl font-black text-yellow-400">184€</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className={muted}>Pro Tag</span>
+                    <span className="font-semibold">8€</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={muted}>Pro Monat</span>
+                    <span className="font-semibold">240€</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={muted}>Pro Jahr</span>
+                    <span className="font-semibold text-yellow-400">2.880€</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Progress */}
+              <div className={`rounded-2xl border p-6 ${card}`}>
+                <h3 className="font-bold mb-4 flex items-center gap-2">
+                  <span>❤️</span> Gesundheits-Score
+                </h3>
+                {[
+                  { label: 'Lunge', value: 72, color: 'bg-teal-400' },
+                  { label: 'Herz', value: 85, color: 'bg-green-400' },
+                  { label: 'Haut', value: 60, color: 'bg-cyan-400' },
+                  { label: 'Energie', value: 78, color: 'bg-purple-400' },
+                ].map((h) => (
+                  <div key={h.label} className="mb-3">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className={muted}>{h.label}</span>
+                      <span className="font-semibold">{h.value}%</span>
+                    </div>
+                    <div className={`h-2 rounded-full ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-2 rounded-full ${h.color} transition-all duration-1000`}
+                        style={{ width: `${h.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Weekly Chart */}
+            <div className={`rounded-2xl border p-6 ${card}`}>
+              <h3 className="font-bold mb-6">Verlangen diese Woche</h3>
+              <div className="flex items-end gap-3 h-32">
+                {[8, 6, 5, 3, 4, 2, 1].map((v, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className="w-full rounded-t-lg bg-gradient-to-t from-teal-500 to-cyan-400 transition-all duration-500"
+                      style={{ height: `${(v / 8) * 100}%`, minHeight: '4px' }}
+                    />
+                    <span className={`text-xs ${muted}`}>
+                      {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][i]}
                     </span>
                   </div>
                 ))}
               </div>
-
-              {/* Step Content */}
-              <div className={`p-8 rounded-lg border ${cardClass} min-h-96`}>
-                {onboardingStep === 1 && (
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-bold">Willkommen bei Nichtraucher 🎯</h3>
-                    <p className="text-gray-400">
-                      Diese App hilft dir, dein Rauchen zu beenden. Mit Unterstützung von deinem AI Buddy
-                      (ein Mix aus Arzt und Coach), Gamification und einer liebevollen Community.
-                    </p>
-                    <p className="text-gray-400">
-                      <strong>Wichtig:</strong> Dies ist keine Therapie, aber ein echtes Support-System.
-                    </p>
-                  </div>
-                )}
-
-                {onboardingStep === 2 && (
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-bold">Dein Ziel</h3>
-                    <div className="space-y-4">
-                      <label className="block">
-                        <input type="radio" name="goal" defaultChecked />
-                        <span className="ml-2">Komplett aufhören zu rauchen</span>
-                      </label>
-                      <label className="block">
-                        <input type="radio" name="goal" />
-                        <span className="ml-2">Menge reduzieren</span>
-                      </label>
-                      <label className="block">
-                        <input type="radio" name="goal" />
-                        <span className="ml-2">Nur gelegentlich rauchen</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                {onboardingStep === 3 && (
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-bold">Deine Motivation</h3>
-                    <textarea
-                      placeholder="Warum möchtest du rauchfrei werden? Z.B. Gesundheit, Familie, Geld..."
-                      className={`w-full p-4 rounded-lg border min-h-40 focus:outline-none focus:ring-2 focus:ring-teal-600 ${inputClass}`}
-                    />
-                  </div>
-                )}
-
-                {onboardingStep === 4 && (
-                  <div className="space-y-6 text-center">
-                    <h3 className="text-2xl font-bold">🎉 Perfekt!</h3>
-                    <p className="text-gray-400">Dein Profil ist erstellt. Starte jetzt deine Reise!</p>
-                    <div className="text-4xl">🚭 → 💚 → 🏆</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Navigation */}
-              <div className="flex gap-4">
-                {onboardingStep > 1 && (
-                  <button
-                    onClick={() => setOnboardingStep(onboardingStep - 1)}
-                    className={`flex-1 py-3 px-4 rounded-lg border font-bold transition ${
-                      darkMode
-                        ? 'border-slate-700 hover:bg-slate-800'
-                        : 'border-gray-300 hover:bg-gray-100'
-                    }`}
-                  >
-                    ← Zurück
-                  </button>
-                )}
-                {onboardingStep < 4 && (
-                  <button
-                    onClick={() => setOnboardingStep(onboardingStep + 1)}
-                    className="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg transition"
-                  >
-                    Weiter →
-                  </button>
-                )}
-                {onboardingStep === 4 && (
-                  <button className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition">
-                    🚀 Los geht's!
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         )}
 
-        {/* Chat Demo */}
-        {activeTab === 'chat' && (
-          <div className={`rounded-xl p-8 border border-gray-700 ${cardClass} max-w-2xl mx-auto`}>
-            <h2 className="text-3xl font-bold mb-6">AI Buddy Chat Demo (Read-only)</h2>
+        {/* FEATURES TAB */}
+        {activeTab === 'features' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-black mb-2">Features</h2>
+              <p className={muted}>Alles, was du für deine rauchfreie Reise brauchst</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {features.map((f) => (
+                <div
+                  key={f.title}
+                  className={`rounded-2xl border p-6 bg-gradient-to-br ${f.color} transition-all hover:scale-[1.02] hover:shadow-xl cursor-pointer`}
+                >
+                  <div className="text-4xl mb-4">{f.icon}</div>
+                  <h3 className="font-bold text-lg mb-2">{f.title}</h3>
+                  <p className={`text-sm leading-relaxed ${muted}`}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-            <div className={`rounded-lg border ${cardClass} h-96 overflow-y-auto p-4 mb-4`}>
-              <div className="space-y-4">
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+        {/* CHAT TAB */}
+        {activeTab === 'chat' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black mb-2">KI-Coach Buddy</h2>
+              <p className={muted}>Dein persönlicher Coach – immer für dich da</p>
+            </div>
+            <div className={`rounded-2xl border overflow-hidden ${card}`}>
+              {/* Chat Header */}
+              <div
+                className={`p-4 border-b flex items-center gap-3 ${
+                  darkMode ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-lg">
+                  🤖
+                </div>
+                <div>
+                  <p className="font-bold">Buddy</p>
+                  <p className="text-xs text-teal-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+                    Online
+                  </p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
+                {chatMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div
-                      className={`max-w-xs px-4 py-3 rounded-lg ${
+                      className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                         msg.role === 'user'
-                          ? 'bg-teal-600 text-white'
+                          ? 'bg-teal-500 text-white rounded-br-sm'
                           : darkMode
-                            ? 'bg-slate-800 text-gray-100'
-                            : 'bg-gray-200 text-slate-900'
+                          ? 'bg-slate-800 text-slate-200 rounded-bl-sm'
+                          : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                       }`}
                     >
                       {msg.text}
@@ -263,227 +395,155 @@ export default function TestPage() {
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <button
-                onClick={() =>
-                  addChatMessage(
-                    'user',
-                    'Ich hatte heute eine schwierige Zeit mit Cravings...'
-                  )
-                }
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition text-left"
+              {/* Input */}
+              <div
+                className={`p-4 border-t flex gap-3 ${
+                  darkMode ? 'border-slate-700' : 'border-gray-200'
+                }`}
               >
-                💭 Demo: "Ich hatte heute eine schwierige Zeit..."
-              </button>
-              <button
-                onClick={() =>
-                  addChatMessage(
-                    'buddy',
-                    'Das ist völlig normal! 💪 Cravings sind am stärksten in den ersten 3 Wochen. Dein Körper gewöhnt sich an die neue Situation.'
-                  )
-                }
-                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-4 rounded-lg transition text-left"
-              >
-                🤖 Demo AI Response
-              </button>
-              <p className="text-xs text-gray-400 text-center">
-                (Demo Mode: Keine Daten werden gespeichert)
-              </p>
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Schreib Buddy eine Nachricht..."
+                  className={`flex-1 rounded-xl px-4 py-3 text-sm outline-none border transition-all ${
+                    darkMode
+                      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-teal-500'
+                      : 'bg-gray-50 border-gray-300 focus:border-teal-500'
+                  }`}
+                />
+                <button
+                  onClick={sendMessage}
+                  className="px-5 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-medium transition-all hover:scale-105 active:scale-95"
+                >
+                  ➤
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Gamification Preview */}
-        {activeTab === 'gamification' && (
-          <div className="space-y-8">
-            <div className={`rounded-xl p-8 border border-gray-700 ${cardClass}`}>
-              <h2 className="text-3xl font-bold mb-8">Gamification Preview (Mock)</h2>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Streaks */}
-                <div className={`rounded-lg border p-6 ${cardClass}`}>
-                  <h3 className="text-2xl font-bold mb-4">🔥 Streaks</h3>
-                  <div className="space-y-4">
-                    <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-semibold">Aktuelle Serie</span>
-                        <span className="text-3xl font-bold text-orange-400">23</span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div className="bg-orange-400 h-2 rounded-full" style={{ width: '92%' }}></div>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-2">7 Tage bis Meilenstein 30</p>
+        {/* TIMELINE TAB */}
+        {activeTab === 'timeline' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-black mb-2">Gesundheits-Timeline</h2>
+              <p className={muted}>So erholt sich dein Körper nach dem Aufhören</p>
+            </div>
+            <div className="relative">
+              <div
+                className={`absolute left-6 top-0 bottom-0 w-0.5 ${
+                  darkMode ? 'bg-slate-700' : 'bg-gray-200'
+                }`}
+              />
+              <div className="space-y-4">
+                {timeline.map((item, i) => (
+                  <div key={i} className="flex gap-6 items-start">
+                    <div
+                      className={`relative z-10 w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 transition-all ${
+                        item.done
+                          ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30'
+                          : darkMode
+                          ? 'bg-slate-800 border border-slate-700 text-slate-500'
+                          : 'bg-gray-100 border border-gray-200 text-gray-400'
+                      }`}
+                    >
+                      {item.done ? '✓' : '○'}
                     </div>
-                    <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-semibold">Beste Serie</span>
-                        <span className="text-2xl font-bold text-yellow-400">23</span>
-                      </div>
-                      <p className="text-sm text-gray-400">Neuer persönlicher Rekord!</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Badges */}
-                <div className={`rounded-lg border p-6 ${cardClass}`}>
-                  <h3 className="text-2xl font-bold mb-4">🏆 Badges (Achievements)</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { emoji: '🎯', label: 'Gestartet', unlocked: true },
-                      { emoji: '🌱', label: '7 Tage', unlocked: true },
-                      { emoji: '💚', label: '14 Tage', unlocked: true },
-                      { emoji: '🔥', label: '30 Tage', unlocked: false },
-                      { emoji: '👑', label: '100 Tage', unlocked: false },
-                      { emoji: '🌟', label: '1 Jahr', unlocked: false },
-                    ].map((badge, idx) => (
+                    <div
+                      className={`flex-1 rounded-2xl border p-4 ${
+                        item.done
+                          ? darkMode
+                            ? 'border-teal-500/30 bg-teal-500/10'
+                            : 'border-teal-200 bg-teal-50'
+                          : card
+                      }`}
+                    >
                       <div
-                        key={idx}
-                        className={`text-center p-4 rounded-lg transition ${
-                          badge.unlocked
-                            ? darkMode
-                              ? 'bg-slate-800'
-                              : 'bg-yellow-50'
-                            : darkMode
-                              ? 'bg-slate-900 opacity-50'
-                              : 'bg-gray-200 opacity-50'
+                        className={`text-xs font-bold mb-1 ${
+                          item.done ? 'text-teal-400' : muted
                         }`}
                       >
-                        <div className="text-3xl mb-2">{badge.emoji}</div>
-                        <p className="text-xs font-semibold">{badge.label}</p>
+                        {item.time}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Levels */}
-              <div className={`rounded-lg border p-6 mt-8 ${cardClass}`}>
-                <h3 className="text-2xl font-bold mb-4">⭐ Level Progress</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="font-semibold">Level 5: "Champion" 💪</span>
-                      <span className="text-sm text-gray-400">1200 / 1500 XP</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-3">
-                      <div className="bg-teal-600 h-3 rounded-full" style={{ width: '80%' }}></div>
+                      <p className="text-sm leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Feature Walkthrough */}
-        {activeTab === 'walkthrough' && (
-          <div className={`rounded-xl p-8 border border-gray-700 ${cardClass}`}>
-            <h2 className="text-3xl font-bold mb-8">Live Feature Walkthrough (Read-only)</h2>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Dashboard Preview */}
-              <div className={`rounded-lg border p-6 ${cardClass}`}>
-                <h3 className="text-xl font-bold mb-4">📊 Dashboard</h3>
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                    <p className="text-sm text-gray-400 mb-1">Hauptmetrik</p>
-                    <p className="text-4xl font-bold text-teal-400">{streakDays} Tage</p>
-                    <p className="text-xs text-gray-400 mt-1">rauchfrei seit 23 März</p>
-                  </div>
-                  <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                    <p className="text-sm text-gray-400 mb-1">Geld gespart</p>
-                    <p className="text-3xl font-bold text-green-400">€195,50</p>
-                  </div>
-                  <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                    <p className="text-sm text-gray-400 mb-1">Gesundheit</p>
-                    <div className="flex gap-2">
-                      <span>❤️</span>
-                      <span>💚</span>
-                      <span>🫁</span>
-                      <span>⚡</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Friends/Accountability */}
-              <div className={`rounded-lg border p-6 ${cardClass}`}>
-                <h3 className="text-xl font-bold mb-4">👥 Freunde & Accountability</h3>
-                <div className="space-y-3">
-                  {['Alex', 'Lisa', 'Marco'].map((friend, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-4 rounded-lg flex justify-between items-center ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}
-                    >
-                      <div>
-                        <p className="font-semibold">{friend}</p>
-                        <p className="text-xs text-gray-400">
-                          {idx === 0 ? '42 Tage' : idx === 1 ? '18 Tage' : '7 Tage'}
-                        </p>
-                      </div>
-                      <span className="text-2xl">{idx === 0 ? '🔥' : idx === 1 ? '💪' : '🌱'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cravings Log */}
-              <div className={`rounded-lg border p-6 ${cardClass}`}>
-                <h3 className="text-xl font-bold mb-4">📝 Cravings Log</h3>
-                <div className="space-y-3">
-                  {[
-                    { time: '14:32', level: 'Hoch', trigger: 'Stress nach Meeting' },
-                    { time: '11:20', level: 'Mittel', trigger: 'Gewohnheit (Kaffee)' },
-                    { time: '08:15', level: 'Niedrig', trigger: 'Morgenroutine' },
-                  ].map((log, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}
-                    >
-                      <div className="flex justify-between mb-2">
-                        <p className="font-semibold text-sm">{log.time}</p>
-                        <span className={`text-xs font-bold px-2 py-1 rounded ${
-                          log.level === 'Hoch' ? 'bg-red-500' :
-                          log.level === 'Mittel' ? 'bg-yellow-500' : 'bg-green-500'
-                        } text-white`}>
-                          {log.level}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-400">{log.trigger}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Daily Facts */}
-              <div className={`rounded-lg border p-6 ${cardClass}`}>
-                <h3 className="text-xl font-bold mb-4">💡 Daily Medical Facts</h3>
-                <div className={`p-4 rounded-lg ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                  <p className="text-sm text-gray-300">
-                    <strong>Tag 23:</strong> Dein Geruchssinn regeneriert sich. Du merkst jetzt
-                    Gerüche, die du 20 Jahre nicht gerochen hast!
-                  </p>
-                </div>
-              </div>
+        {/* GAMIFICATION TAB */}
+        {activeTab === 'gamification' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-black mb-2">Achievements</h2>
+              <p className={muted}>Verdiene Badges auf deiner rauchfreien Reise</p>
             </div>
 
-            {/* Mobile Responsive Demo */}
-            <div className={`rounded-lg border p-6 mt-8 ${cardClass}`}>
-              <h3 className="text-xl font-bold mb-4">📱 Mobile-Responsive Layout</h3>
-              <p className="text-sm text-gray-400 mb-4">
-                Diese Seite passt sich automatisch an alle Bildschirmgrößen an. Probiere es aus, indem du dein Browser-Fenster verkleinerst!
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className={`p-4 rounded-lg text-center ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                  <p className="text-xs">📱 Mobil</p>
-                  <p className="text-lg font-bold">Single Column</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {badges.map((b) => (
+                <div
+                  key={b.name}
+                  className={`rounded-2xl border p-6 text-center transition-all hover:scale-105 ${
+                    b.earned
+                      ? darkMode
+                        ? 'border-teal-500/40 bg-gradient-to-br from-teal-500/15 to-cyan-500/10'
+                        : 'border-teal-200 bg-teal-50'
+                      : `${card} opacity-50`
+                  }`}
+                >
+                  <div
+                    className={`text-5xl mb-3 ${!b.earned && 'grayscale'}`}
+                  >
+                    {b.icon}
+                  </div>
+                  <p className="font-bold">{b.name}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      b.earned ? 'text-teal-400' : muted
+                    }`}
+                  >
+                    {b.earned ? '✓ Verdient' : '🔒 Gesperrt'}
+                  </p>
                 </div>
-                <div className={`p-4 rounded-lg text-center ${darkMode ? 'bg-slate-800' : 'bg-gray-100'}`}>
-                  <p className="text-xs">🖥️ Desktop</p>
-                  <p className="text-lg font-bold">Multi-Column</p>
-                </div>
+              ))}
+            </div>
+
+            {/* Leaderboard */}
+            <div className={`rounded-2xl border p-6 ${card}`}>
+              <h3 className="font-bold mb-4">🏆 Bestenliste</h3>
+              <div className="space-y-3">
+                {[
+                  { name: 'Sarah M.', days: 45, rank: 1 },
+                  { name: 'Du', days: 23, rank: 2 },
+                  { name: 'Thomas K.', days: 18, rank: 3 },
+                  { name: 'Julia R.', days: 12, rank: 4 },
+                ].map((u) => (
+                  <div
+                    key={u.name}
+                    className={`flex items-center gap-4 p-3 rounded-xl ${
+                      u.name === 'Du'
+                        ? darkMode
+                          ? 'bg-teal-500/15 border border-teal-500/30'
+                          : 'bg-teal-50 border border-teal-200'
+                        : subtle
+                    }`}
+                  >
+                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-sm font-bold text-white">
+                      {u.rank}
+                    </span>
+                    <span className={`flex-1 font-medium ${u.name === 'Du' ? 'text-teal-400' : ''}`}>
+                      {u.name}
+                    </span>
+                    <span className={`text-sm font-bold ${u.name === 'Du' ? 'text-teal-400' : muted}`}>
+                      {u.days} Tage
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -491,9 +551,13 @@ export default function TestPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-700 mt-16 py-8 text-center text-sm text-gray-400">
-        <p>Nichtraucher Test Demo • No Authentication Required • No Data Saved</p>
-        <p className="mt-2">Built with Next.js + Tailwind CSS</p>
+      <footer
+        className={`mt-16 py-8 text-center text-sm border-t ${
+          darkMode ? 'border-slate-800 text-slate-500' : 'border-gray-200 text-gray-400'
+        }`}
+      >
+        <p>🚭 Nichtraucher Demo • Keine Anmeldung • Keine Daten werden gespeichert</p>
+        <p className="mt-1">Built with Next.js + Tailwind CSS</p>
       </footer>
     </div>
   );
