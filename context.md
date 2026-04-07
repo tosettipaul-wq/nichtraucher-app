@@ -113,3 +113,10 @@
 **Last Updated:** Apr 6, 2026, 10:48 CET  
 **Owner:** Paul Tosetti  
 **Team:** James (orchestration), Maya (Phase 2 build)
+
+## Design Overhaul (April 7, 2026)
+- **Status:** ✅ Deployed to https://nichtraucher-app.vercel.app
+- **Design:** Premium dark mode - slate-950 throughout, teal primary (#14b8a6), emerald accents
+- **Pages redesigned:** Home, Login, Onboarding 1-5, Dashboard, Chat, Leaderboard, Craving, Friends
+- **Components:** StreakWidget + AchievementsBadges - professional premium design
+- **Style:** meinpraxishelfer.de inspired — minimal, clean, trust-focused
