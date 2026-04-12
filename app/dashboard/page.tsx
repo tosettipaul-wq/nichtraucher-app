@@ -10,6 +10,9 @@ import {
 } from '@/lib/notification-service';
 import StreakWidget from '@/components/StreakWidget';
 import AchievementsBadges from '@/components/AchievementsBadges';
+import MilestoneTracker from '@/components/MilestoneTracker';
+import TeamChallenges from '@/components/TeamChallenges';
+import AchievementNotifications from '@/components/AchievementNotifications';
 import { getLevelFromXP } from '@/lib/gamification-utils';
 
 const QUICK_ACTIONS = [
@@ -17,6 +20,7 @@ const QUICK_ACTIONS = [
   { icon: '😤', label: 'Craving', sub: 'Verlangen loggen', href: '/craving' },
   { icon: '🤖', label: 'KI-Coach', sub: 'Quitter-Buddy', href: '/chat' },
   { icon: '👥', label: 'Freunde', sub: 'Accountability', href: '/friends' },
+  { icon: '👤', label: 'Profil', sub: 'Abzeichen', href: '/profile' },
 ];
 
 export default function DashboardPage() {
@@ -166,8 +170,17 @@ export default function DashboardPage() {
           <StreakWidget quitDate={profile.quit_date} currentStreak={streak} />
         )}
 
+        {/* Achievement Notifications */}
+        <AchievementNotifications />
+
+        {/* Milestone Tracker */}
+        <MilestoneTracker currentStreak={streak} />
+
+        {/* Team Challenges */}
+        <TeamChallenges />
+
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {QUICK_ACTIONS.map(({ icon, label, sub, href }) => (
             <button
               key={href}

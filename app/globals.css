@@ -106,3 +106,18 @@ input::placeholder, textarea::placeholder {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+   CONFETTI ANIMATION FOR ACHIEVEMENTS
+   ============================================================================ */
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(var(--confetti-start-y)) translateX(var(--confetti-start-x)) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti-fall var(--confetti-duration) ease-in forwards;
+}
