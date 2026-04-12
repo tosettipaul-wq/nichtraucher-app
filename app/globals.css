@@ -48,3 +48,61 @@ input:focus, textarea:focus, select:focus {
 input::placeholder, textarea::placeholder {
   color: #9ca3af;
 }
+
+/* MOBILE OPTIMIZATION - Touch-friendly elements */
+@media (max-width: 768px) {
+  /* Ensure all interactive elements are at least 48x48px */
+  button, a, input[type="button"], input[type="submit"], input[type="checkbox"], input[type="radio"] {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+
+  /* Remove 300ms tap delay */
+  button, a, input[type="button"], input[type="submit"], select, textarea {
+    touch-action: manipulation;
+  }
+
+  /* Better text sizing for mobile */
+  body {
+    font-size: 16px;
+  }
+
+  /* Prevent horizontal scroll */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Image optimization for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Text optimization */
+  p, span, label {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Extra small phones (390px) */
+@media (max-width: 390px) {
+  body {
+    font-size: 14px;
+  }
+
+  button, a {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Performance optimization */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
